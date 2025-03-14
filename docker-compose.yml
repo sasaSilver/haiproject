@@ -1,0 +1,24 @@
+services:
+  fastapi:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    environment:
+      - DB_URI=postgresql+asyncpg://user:password@postgres/moviedb
+    depends_on:
+      - postgres
+    command: ["fastapi", "run", "./backend/api/main.py", "--port", "80"]
+
+  postgres:
+    image: postgres:latest
+    environment:
+      POSTGRES_DB: moviedb
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
