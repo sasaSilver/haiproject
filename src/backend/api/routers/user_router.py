@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException
 from sqlalchemy import select, update, delete
 from pydantic import PositiveInt
 
-from ....backend.database.models import *
+from src.backend.database.models import *
 from ..utils import DBSession
 from ..schemas import *
 

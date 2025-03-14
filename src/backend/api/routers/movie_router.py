@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Query
 from sqlalchemy import select, update, delete, not_
 from sqlalchemy.orm import selectinload, aliased
 
-from ....backend.database.models import *
+from src.backend.database.models import *
 from ..schemas import *
 from ..utils import DBSession, create_genres, Lowercase
 
