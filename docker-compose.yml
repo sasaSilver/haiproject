@@ -9,7 +9,6 @@ services:
       - DB_URI=postgresql+asyncpg://user:password@postgres/moviedb
     depends_on:
       - postgres
-    command: ["fastapi", "run", "./src/backend/api/main.py", "--port", "80"]
 
   postgres:
     image: postgres:latest
