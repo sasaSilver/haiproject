@@ -1,7 +1,10 @@
-from pydantic import Field, PositiveInt
+from typing import Annotated
+
+from pydantic import Field, PositiveInt, StringConstraints
 
 from .base import Base
-from ..utils import Lowercase
+
+Lowercase = Annotated[str, StringConstraints(pattern=r"^[A-Za-z]+$", to_lower=True)]
 
 class _MovieBase(Base):
     title: str
@@ -18,5 +21,5 @@ class Movie(_MovieBase):
 class MovieUpdate(Base):
     title: str | None = None
     duration: PositiveInt | None = None
-    year: PositiveInt | None = None
+    year: PositiveInt | None = Field(None, ge=1700)
     genres: list[Lowercase] | None = None

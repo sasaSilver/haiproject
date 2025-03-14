@@ -1,20 +1,21 @@
 from fastapi import APIRouter, HTTPException
 from sqlalchemy import select, update, delete
 from sqlalchemy.exc import IntegrityError
+from pydantic import PositiveInt
 
 from src.backend.database.models import *
-from ..schemas import *
 from ..utils import DBSession
+from ..schemas import *
 
 rating_router = APIRouter(prefix="/ratings", tags=["ratings"])
 
 @rating_router.get("/")
 async def get_ratings(
     db: DBSession,
-    user: int | None = None,
-    movie: int | None = None,
-    skip: int = 0,
-    limit: int = 100
+    user: PositiveInt | None = None,
+    movie: PositiveInt | None = None,
+    skip: PositiveInt = 0,
+    limit: PositiveInt = 100
 ) -> list[Rating]:
     query = select(RatingSchema)
     if user is not None:
@@ -65,8 +66,8 @@ async def update_rating(
 @rating_router.delete("/")
 async def delete_rating(
     db: DBSession,
-    user: int | None = None,
-    movie: int | None = None
+    user: PositiveInt | None = None,
+    movie: PositiveInt | None = None
 ):
     deleted = (await db.execute(
         delete(RatingSchema).

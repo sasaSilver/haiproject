@@ -1,3 +1,4 @@
+from sqlalchemy import CheckConstraint
 from sqlalchemy.orm import mapped_column, relationship, Mapped
 
 from .base import Base
@@ -9,8 +10,12 @@ class MovieSchema(Base):
     
     id: Mapped[int] = mapped_column(primary_key=True)
     title: Mapped[str] = mapped_column()
-    duration: Mapped[int] = mapped_column()
-    year: Mapped[int] = mapped_column()
+    duration: Mapped[int] = mapped_column(
+        CheckConstraint("duration > 0", name="positive_duration"),
+    )
+    year: Mapped[int] = mapped_column(
+        CheckConstraint("year > 1700", name="year_gt_1700")
+    )
     
     ratings: Mapped[set[RatingSchema] | None] = relationship(
         back_populates="movie",

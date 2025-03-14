@@ -6,10 +6,14 @@ from .base import Base
 class RatingSchema(Base):
     __tablename__ = "ratings"
     
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), primary_key=True)
-    movie_id: Mapped[int] = mapped_column(ForeignKey("movies.id"), primary_key=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
+    )
+    movie_id: Mapped[int] = mapped_column(
+        ForeignKey("movies.id", ondelete="CASCADE"), primary_key=True
+    )
     rating: Mapped[int] = mapped_column(
-        CheckConstraint('rating >= 1 AND rating <= 10', name='check_rating_range')
+        CheckConstraint("rating >= 0 AND rating <= 10", name="rating_range")
     )
 
     user: Mapped["UserSchema"] = relationship( # type: ignore

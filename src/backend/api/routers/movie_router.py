@@ -1,21 +1,13 @@
 from fastapi import APIRouter, HTTPException, Query
 from sqlalchemy import select, update, delete, not_
 from sqlalchemy.orm import selectinload, aliased
+from pydantic import PositiveInt
 
 from src.backend.database.models import *
+from ..utils import DBSession, create_genres, Lowercase, movie_to_pydantic
 from ..schemas import *
-from ..utils import DBSession, create_genres, Lowercase
 
 movie_router = APIRouter(prefix="/movies", tags=["movies"])
-
-def movie_to_pydantic(movie: MovieSchema) -> Movie:
-    return Movie(
-        id=movie.id,
-        title=movie.title,
-        duration=movie.duration,
-        year=movie.year,
-        genres=[g.name for g in movie.genres]
-    )
 
 @movie_router.post("/")
 async def create_movie(
@@ -38,8 +30,8 @@ async def get_movies(
     _and: list[Lowercase] | None = Query(None, alias="and"),
     _or: list[Lowercase] | None = Query(None, alias="or"),
     _not: list[Lowercase] | None = Query(None, alias="not"),
-    skip: int = 0,
-    limit: int = 100
+    skip: PositiveInt = Query(0),
+    limit: PositiveInt = Query(100, le=100)
 ) -> list[Movie]:
     query = select(MovieSchema).options(selectinload(MovieSchema.genres))
 
@@ -63,7 +55,7 @@ async def get_movies(
 
 @movie_router.get("/{movie_id}")
 async def get_movie(
-    movie_id: int,
+    movie_id: PositiveInt,
     db: DBSession
 ) -> Movie:
     movie = (
@@ -81,7 +73,9 @@ async def get_movie(
 
 @movie_router.patch("/{movie_id}")
 async def update_movie(
-    movie_id: int, movie: MovieUpdate, db: DBSession
+    movie_id: PositiveInt,
+    movie: MovieUpdate,
+    db: DBSession
 ):
     updated = (await db.execute(
         update(MovieSchema).
@@ -96,7 +90,8 @@ async def update_movie(
 
 @movie_router.delete("/{movie_id}")
 async def delete_movie(
-    movie_id: int, db: DBSession
+    movie_id: PositiveInt,
+    db: DBSession
 ):
     deleted = (await db.execute(
         delete(MovieSchema).where(MovieSchema.id == movie_id)

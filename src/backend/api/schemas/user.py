@@ -23,4 +23,3 @@ class UserUpdate(Base):
     gender: str | None = None
     country: str | None = None
     password: str | None = None
-    

@@ -10,4 +10,4 @@ class Rating(Base):
 class RatingUpdate(Base):
     user_id: PositiveInt | None = None
     movie_id: PositiveInt | None = None
-    rating: PositiveInt | None = None
+    rating: PositiveInt | None = Field(None, ge=0, le=10)
