@@ -14,9 +14,6 @@ class UserRead(_UserBase):
 class UserCreate(_UserBase):
     password: str
 
-class User(UserCreate):
-    id: PositiveInt
-
 class UserUpdate(Base):
     name: str | None = None
     email: EmailStr | None = None

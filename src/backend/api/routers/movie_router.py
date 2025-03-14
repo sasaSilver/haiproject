@@ -1,101 +1,53 @@
 from fastapi import APIRouter, HTTPException, Query
-from sqlalchemy import select, update, delete, not_
-from sqlalchemy.orm import selectinload, aliased
 from pydantic import PositiveInt
 
-from src.backend.database.models import *
-from ..utils import DBSession, create_genres, Lowercase, movie_to_pydantic
-from ..schemas import *
+from ..schemas import MovieCreate, MovieRead, MovieUpdate
+from ..dependencies import MovieRepo
 
 movie_router = APIRouter(prefix="/movies", tags=["movies"])
 
 @movie_router.post("/")
 async def create_movie(
-    db: DBSession, 
+    repo: MovieRepo, 
     movie: MovieCreate
-) -> Movie:
-    movie: MovieSchema = MovieSchema(
-        title=movie.title,
-        duration=movie.duration,
-        year=movie.year,
-        genres=await create_genres(db, movie.genres)
-    )
-    db.add(movie)
-    await db.commit()
-    return movie_to_pydantic(movie)
+) -> MovieRead:
+    return await repo.create(movie)
 
 @movie_router.get("/")
 async def get_movies(
-    db: DBSession,
-    _and: list[Lowercase] | None = Query(None, alias="and"),
-    _or: list[Lowercase] | None = Query(None, alias="or"),
-    _not: list[Lowercase] | None = Query(None, alias="not"),
+    repo: MovieRepo,
     skip: PositiveInt = Query(0),
     limit: PositiveInt = Query(100, le=100)
-) -> list[Movie]:
-    query = select(MovieSchema).options(selectinload(MovieSchema.genres))
-
-    if _and:
-        for genre in _and:
-            genre_alias = aliased(GenreSchema)
-            query = query.join(MovieSchema.genres.of_type(genre_alias))
-            query = query.where(genre_alias.name == genre)
-    if _or:
-        query = query.join(MovieSchema.genres).where(GenreSchema.name.in_(_or))
-    if _not:
-        query = query.where(not_(MovieSchema.genres.any(GenreSchema.name.in_(_not))))
-    
-    query = query.group_by(MovieSchema.id)
-    
-    movies = (await db.execute(
-        query.offset(skip).limit(limit)
-    )).scalars().all()
-    
-    return [movie_to_pydantic(movie) for movie in movies]
+) -> list[MovieRead]:
+    return await repo.get_all(skip, limit)
 
 @movie_router.get("/{movie_id}")
 async def get_movie(
-    movie_id: PositiveInt,
-    db: DBSession
-) -> Movie:
-    movie = (
-        await db.execute(
-            select(MovieSchema).
-            options(
-                selectinload(MovieSchema.genres),
-            ).
-            where(MovieSchema.id == movie_id)
-        )
-    ).scalar_one_or_none()
+    repo: MovieRepo,
+    movie_id: PositiveInt
+) -> MovieRead:
+    movie = await repo.get(movie_id)
     if movie is None:
-        raise HTTPException(422, f"No movie with id <{movie_id}>")
-    return movie_to_pydantic(movie)
+        raise HTTPException(404, f"No movie with id <{movie_id}>")
+    return movie
 
 @movie_router.patch("/{movie_id}")
 async def update_movie(
+    repo: MovieRepo,
     movie_id: PositiveInt,
     movie: MovieUpdate,
-    db: DBSession
 ):
-    updated = (await db.execute(
-        update(MovieSchema).
-        where(MovieSchema.id == movie_id).
-        values(**movie.model_dump())
-    )).rowcount
-    
-    if updated == 0:
+    success = await repo.update(movie_id, movie)
+    if success == False:
         raise HTTPException(404, f"No movie with id <{movie_id}>")
-    
     return {"message": f"Movie with id {movie_id} updated successfully"}
 
 @movie_router.delete("/{movie_id}")
 async def delete_movie(
-    movie_id: PositiveInt,
-    db: DBSession
+    repo: MovieRepo,
+    movie_id: PositiveInt
 ):
-    deleted = (await db.execute(
-        delete(MovieSchema).where(MovieSchema.id == movie_id)
-    )).rowcount
-    if deleted == 0:
+    success = await repo.delete(movie_id)
+    if success == False:
         raise HTTPException(404, f"No movie with id <{movie_id}>")
     return {"message": f"Movie with id {movie_id} deleted successfully"}

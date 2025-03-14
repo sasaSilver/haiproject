@@ -1,16 +1,15 @@
-from .movie import Movie, MovieCreate, MovieUpdate
-from .user import User, UserCreate, UserRead, UserUpdate
+from .movie import MovieCreate, MovieRead, MovieUpdate
+from .user import UserCreate, UserRead, UserUpdate
 from .rating import Rating, RatingUpdate
 
 __all__ = [
     "Rating",
     "RatingUpdate",
-    "Movie",
     "MovieCreate",
+    "MovieRead",
     "MovieUpdate",
-    "User",
-    "UserRead",
     "UserCreate",
+    "UserRead",
     "UserUpdate"
 ]
 

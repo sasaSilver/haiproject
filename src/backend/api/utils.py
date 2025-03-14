@@ -39,7 +39,7 @@ Alphabetic = Annotated[str, StringConstraints(pattern=r"^[A-Za-z]+$")]
 Lowercase = Annotated[str, StringConstraints(pattern=r"^[A-Za-z]+$", to_lower=True)]
 
 def movie_to_pydantic(movie: MovieSchema):
-    return Movie(
+    return MovieRead(
         id=movie.id,
         title=movie.title,
         duration=movie.duration,

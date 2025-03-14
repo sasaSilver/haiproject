@@ -1,79 +1,45 @@
-from fastapi import APIRouter, HTTPException
-from sqlalchemy import select, update, delete
-from sqlalchemy.exc import IntegrityError
+from fastapi import APIRouter, HTTPException, Query
 from pydantic import PositiveInt
 
-from src.backend.database.models import *
-from ..utils import DBSession
-from ..schemas import *
+from ..schemas import Rating, RatingUpdate
+from ..dependencies import RatingRepo
 
 rating_router = APIRouter(prefix="/ratings", tags=["ratings"])
 
 @rating_router.get("/")
 async def get_ratings(
-    db: DBSession,
+    repo: RatingRepo,
     user: PositiveInt | None = None,
     movie: PositiveInt | None = None,
-    skip: PositiveInt = 0,
-    limit: PositiveInt = 100
+    skip: PositiveInt = Query(0),
+    limit: PositiveInt = Query(100, le=100)
 ) -> list[Rating]:
-    query = select(RatingSchema)
-    if user is not None:
-        query = query.where(RatingSchema.user_id == user)
-    if movie is not None:
-        query = query.where(RatingSchema.movie_id == movie)
-    return list(
-        (await db.execute(
-            query.offset(skip).limit(limit)
-        )).scalars().all()
-    )
+    return await repo.get_all(user, movie, skip, limit)
 
 @rating_router.post("/")
 async def create_rating(
-    db: DBSession,
+    repo: RatingRepo,
     rating: Rating
 ) -> Rating:
-    rating = RatingSchema(**rating.model_dump())
-    db.add(rating)
-    try:
-        await db.flush()
-    except IntegrityError as e:
-        raise HTTPException(
-            404,
-            f"No movie or user with ids <{rating.movie_id}> and <{rating.user_id}>"
-        )
-    return Rating.model_validate(rating)
+    return await repo.create(rating)
 
 @rating_router.patch("/")
 async def update_rating(
-    db: DBSession,
+    repo: RatingRepo,
     rating: RatingUpdate
-) -> Rating:
-    updated = (await db.execute(
-        update(RatingSchema).
-        where(RatingSchema.movie_id == rating.movie_id).
-        where(RatingSchema.user_id == rating.user_id).
-        values(rating = rating.rating)
-    )).rowcount
-    if updated == 0:
-        raise HTTPException(
-            404,
-            f"No rating for movie <{rating.movie_id}> from user <{rating.user_id}>"
-        )
-    return {"message": f"Rating for movie <{rating.movie_id}>\
-                         from user <{rating.user_id}> updated successfully"}
+) -> dict:
+    updated = await repo.update(rating)
+    if not updated:
+        raise HTTPException(404, f"No rating for movie <{rating.movie_id}> from user <{rating.user_id}>")
+    return {"message": f"Rating for movie <{rating.movie_id}> from user <{rating.user_id}> updated successfully"}
 
 @rating_router.delete("/")
 async def delete_rating(
-    db: DBSession,
-    user: PositiveInt | None = None,
-    movie: PositiveInt | None = None
+    repo: RatingRepo,
+    user: PositiveInt,
+    movie: PositiveInt
 ):
-    deleted = (await db.execute(
-        delete(RatingSchema).
-        where(RatingSchema.user_id == user).
-        where(RatingSchema.movie_id == movie)
-    )).rowcount
-    if deleted == 0:
+    deleted = await repo.delete(user, movie)
+    if not deleted:
         raise HTTPException(404, f"No movie with user id <{user}> and movie id <{movie}>")
     return {"message": f"Deleted rating by user <{user}> to movie <{movie}>"}
