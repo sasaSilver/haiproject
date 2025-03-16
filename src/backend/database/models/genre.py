@@ -14,7 +14,7 @@ class GenreSchema(Base):
     __tablename__ = "genres"
     
     id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str] = mapped_column(unique=True)
+    name: Mapped[str] = mapped_column(unique=True, index=True)
     
     movies: Mapped[set["MovieSchema"]] = relationship( # type: ignore
         secondary=movie_genre,

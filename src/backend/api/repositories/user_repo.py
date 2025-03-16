@@ -21,12 +21,10 @@ class UserRepository(BaseRepository):
         ))
     
     async def get(self, user_id: int) -> UserRead | None:
-        user = (
-            await self.db.execute(
-                select(UserSchema).
-                where(UserSchema.id == user_id)
-            )
-        ).scalar_one_or_none()
+        user = (await self.db.execute(
+            select(UserSchema).
+            where(UserSchema.id == user_id)
+        )).scalar_one_or_none()
         
         return UserRead.model_validate(user) if user else None
     

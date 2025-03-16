@@ -1,22 +1,22 @@
-from pydantic import Field, PositiveInt
+from pydantic import Field
 
 from .base import Base
-from ..utils import Lowercase
+from .genre import GenreRead, GenreUpdate
 
 class _MovieBase(Base):
     title: str
-    duration: PositiveInt
-    year: PositiveInt = Field(ge=1700)
+    duration: int = Field(example=1000, description="Duration in seconds")
+    year: int = Field(example=2000)
 
 class MovieCreate(_MovieBase):
-    genres: list[Lowercase] = []
+    genres: list[str]
 
 class MovieRead(_MovieBase):
-    id: PositiveInt
-    genres: list[Lowercase] = []
+    id: int
+    genres: list[GenreRead]
 
 class MovieUpdate(Base):
     title: str | None = None
-    duration: PositiveInt | None = None
-    year: PositiveInt | None = Field(None, ge=1700)
-    genres: list[Lowercase] | None = None
+    duration: int | None = None
+    year: int | None = None
+    genres: list[GenreUpdate] | None = None

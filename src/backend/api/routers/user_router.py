@@ -40,7 +40,6 @@ async def update_user(
     status = await repo.update(user_id, UserUpdate)
     if status == False:
         raise HTTPException(422, f"No user with id <{user_id}>")
-    return {"message": f"User with id <{user_id}> updated successfully"}
     
 @user_router.delete("/{user_id}")
 async def delete_user(
@@ -50,4 +49,3 @@ async def delete_user(
     status = repo.delete(user_id)
     if status == False:
         raise HTTPException(422, f"No user with id <{user_id}>")
-    return {"message": f"User with id {user_id} deleted successfully"}

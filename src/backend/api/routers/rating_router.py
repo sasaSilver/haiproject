@@ -9,12 +9,12 @@ rating_router = APIRouter(prefix="/ratings", tags=["ratings"])
 @rating_router.get("/")
 async def get_ratings(
     repo: RatingRepo,
-    user: PositiveInt | None = None,
-    movie: PositiveInt | None = None,
+    user_id: PositiveInt | None = Query(None, alias="user"),
+    movie_id: PositiveInt | None = Query(None, alias="movie"),
     skip: PositiveInt = Query(0),
     limit: PositiveInt = Query(100, le=100)
 ) -> list[Rating]:
-    return await repo.get_all(user, movie, skip, limit)
+    return await repo.get_all(user_id, movie_id, skip, limit)
 
 @rating_router.post("/")
 async def create_rating(
@@ -28,18 +28,16 @@ async def update_rating(
     repo: RatingRepo,
     rating: RatingUpdate
 ) -> dict:
-    updated = await repo.update(rating)
-    if not updated:
+    status = await repo.update(rating)
+    if status == False:
         raise HTTPException(404, f"No rating for movie <{rating.movie_id}> from user <{rating.user_id}>")
-    return {"message": f"Rating for movie <{rating.movie_id}> from user <{rating.user_id}> updated successfully"}
 
 @rating_router.delete("/")
 async def delete_rating(
     repo: RatingRepo,
-    user: PositiveInt,
-    movie: PositiveInt
+    user_id: PositiveInt | None = Query(None, alias="user"),
+    movie_id: PositiveInt | None = Query(None, alias="movie")
 ):
-    deleted = await repo.delete(user, movie)
-    if not deleted:
-        raise HTTPException(404, f"No movie with user id <{user}> and movie id <{movie}>")
-    return {"message": f"Deleted rating by user <{user}> to movie <{movie}>"}
+    status = await repo.delete(user_id, movie_id)
+    if status == False:
+        raise HTTPException(404, f"No movie with user id <{user_id}> and movie id <{movie_id}>")

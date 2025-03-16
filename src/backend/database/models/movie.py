@@ -9,7 +9,7 @@ class MovieSchema(Base):
     __tablename__ = "movies"
     
     id: Mapped[int] = mapped_column(primary_key=True)
-    title: Mapped[str] = mapped_column()
+    title: Mapped[str] = mapped_column(index=True)
     duration: Mapped[int] = mapped_column(
         CheckConstraint("duration > 0", name="positive_duration"),
     )

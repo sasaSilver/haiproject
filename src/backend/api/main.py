@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Response
 from fastapi.middleware.cors import CORSMiddleware
 
 from .routers import routers
@@ -18,7 +18,7 @@ app.add_middleware(
 
 @app.get("/")
 async def ping() -> str:
-    return settings.project_name
+    return Response(content="alive", media_type="text/plain")
 
 for router in routers:
     app.include_router(router)
