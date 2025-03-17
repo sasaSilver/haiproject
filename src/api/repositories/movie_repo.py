@@ -1,6 +1,5 @@
 from sqlalchemy import select, update, delete, not_
 from sqlalchemy.orm import selectinload, aliased
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.dialects.postgresql import insert
 
 from .base_repo import BaseRepository

@@ -27,7 +27,7 @@ async def create_rating(
 async def update_rating(
     repo: RatingRepo,
     rating: RatingUpdate
-) -> dict:
+) -> Rating:
     status = await repo.update(rating)
     if status == False:
         raise HTTPException(404, f"No rating for movie <{rating.movie_id}> from user <{rating.user_id}>")
