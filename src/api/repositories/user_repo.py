@@ -2,7 +2,7 @@ from sqlalchemy import select, update, delete
 
 from .base_repo import BaseRepository
 from ..schemas import UserCreate, UserRead, UserUpdate
-from src.backend.database.models import UserSchema
+from src.database.models import UserSchema
 
 class UserRepository(BaseRepository):
     async def create(self, user: UserCreate) -> UserRead:

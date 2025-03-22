@@ -7,6 +7,15 @@ services:
       - "80:80"
     environment:
       - DB_URI=postgresql+asyncpg://user:password@postgres/moviedb
+    volumes:
+      - .:/app
+    develop:
+      watch:
+        - action: sync
+          path: .
+          target: /app
+        - action: rebuild
+          path: requirements.txt
     depends_on:
       - postgres
 

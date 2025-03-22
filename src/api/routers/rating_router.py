@@ -20,8 +20,10 @@ async def get_ratings(
 async def create_rating(
     repo: RatingRepo,
     rating: Rating
-) -> Rating:
-    return await repo.create(rating)
+):
+    status = await repo.create(rating)
+    if status == False:
+        raise HTTPException(404, f"Rating already exists or movie with id <{rating.movie_id}> or user with id <{rating.user_id}> don't exist")
 
 @rating_router.patch("/")
 async def update_rating(
@@ -40,4 +42,4 @@ async def delete_rating(
 ):
     status = await repo.delete(user_id, movie_id)
     if status == False:
-        raise HTTPException(404, f"No movie with user id <{user_id}> and movie id <{movie_id}>")
+        raise HTTPException(404, f"No rating for movie <{movie_id}> from user <{user_id}>")

@@ -1,16 +1,16 @@
-from sqlalchemy import select, update, delete, not_
+from sqlalchemy import select, update, delete, not_, func
 from sqlalchemy.orm import selectinload, aliased
 from sqlalchemy.dialects.postgresql import insert
 
 from .base_repo import BaseRepository
 from ..schemas import MovieCreate, MovieRead, MovieUpdate
-from src.backend.database.models import MovieSchema, GenreSchema
+from src.database.models import MovieSchema, GenreSchema, RatingSchema
 
 class MovieRepository(BaseRepository):
     async def create(self, movie: MovieCreate) -> MovieRead:
         movie = MovieSchema(
             **movie.model_dump(exclude={"genres"}),
-            genres = await self._create_genres(self.db, movie.genres)
+            genres = await self._create_genres(movie.genres)
         )
         self.db.add(movie)
         await self.db.commit()
@@ -87,3 +87,16 @@ class MovieRepository(BaseRepository):
         )).scalars().all()
         
         return set(new_genres + existing)
+
+    async def get_popular(self, limit: int = 10) -> list[MovieRead]:
+        query = (
+            select(MovieSchema)
+            .outerjoin(RatingSchema)
+            .group_by(MovieSchema.id)
+            .order_by(func.avg(RatingSchema.rating).desc())
+            .options(selectinload(MovieSchema.genres))
+            .limit(limit)
+        )
+        
+        movies = (await self.db.execute(query)).scalars().all()
+        return [MovieRead.model_validate(movie) for movie in movies]

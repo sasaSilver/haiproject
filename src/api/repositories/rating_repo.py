@@ -3,7 +3,7 @@ from sqlalchemy.exc import IntegrityError
 
 from .base_repo import BaseRepository
 from ..schemas import Rating, RatingUpdate
-from src.backend.database.models import RatingSchema
+from src.database.models import RatingSchema
 
 class RatingRepository(BaseRepository):
     async def get_all(
@@ -26,7 +26,7 @@ class RatingRepository(BaseRepository):
         self.db.add(rating)
         try:
             await self.db.commit()
-        except IntegrityError as e:
+        except IntegrityError:
             return False
         return True
 

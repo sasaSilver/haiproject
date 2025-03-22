@@ -1,15 +1,12 @@
-from pydantic import PostgresDsn, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import Field
 
 class Settings(BaseSettings):
-    db_uri_pg: PostgresDsn = Field(validation_alias="DB_URI") # for validation of pg uri
-    db_uri: str = None
+    db_uri: str = Field(validation_alias="DB_URI")
     echo_sql: bool = True
     project_name: str = "Movie API"
-    model_config = SettingsConfigDict(env_file="../../.env")
-    
-    @property
-    def db_uri(self) -> str: # for actual pg uri as str
-        return str(self.db_uri_pg)
+    model_config = SettingsConfigDict(
+        env_file=".env"
+    )
 
 settings = Settings()
