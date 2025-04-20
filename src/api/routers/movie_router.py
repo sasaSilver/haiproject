@@ -1,9 +1,13 @@
+from typing import Annotated
+
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import PositiveInt
+from pydantic.types import StringConstraints
 
 from ..schemas import MovieCreate, MovieRead, MovieUpdate
 from ..dependencies import MovieRepo
-from .utils import Lowercase
+
+Lowercase = Annotated[str, StringConstraints(pattern=r"^[A-Za-z]+$", to_lower=True)]
 
 movie_router = APIRouter(prefix="/movies", tags=["movies"])
 

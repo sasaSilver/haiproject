@@ -7,3 +7,4 @@ from .repositories import *
 UserRepo = Annotated[UserRepository, Depends(UserRepository.get_repo)]
 MovieRepo = Annotated[MovieRepository, Depends(MovieRepository.get_repo)]
 RatingRepo = Annotated[RatingRepository, Depends(RatingRepository.get_repo)]
+AuthRepo = Annotated[AuthRepository, Depends(AuthRepository.get_repo)]

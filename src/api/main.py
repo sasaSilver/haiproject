@@ -8,9 +8,14 @@ app = FastAPI(
     title=settings.project_name
 )
 
+origins = [
+    "http://localhost:3000",
+    # frontend url
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PATCH", "DELETE"],
     allow_headers=["*"],

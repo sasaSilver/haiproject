@@ -21,8 +21,8 @@ class MovieRepository(BaseRepository):
             _and: list[str] | None,
             _or: list[str] | None,
             _not: list[str] | None,
-            skip = 0,
-            limit = 100
+            skip: int,
+            limit: int
     ) -> list[MovieRead]:
         query = select(MovieSchema).options(selectinload(MovieSchema.genres))
         if _and:
@@ -55,7 +55,9 @@ class MovieRepository(BaseRepository):
 
     async def update(self, movie_id: int, movie: MovieUpdate) -> bool:
         updated = (await self.db.execute(
-            update(MovieSchema).where(MovieSchema.id == movie_id).values(**movie.model_dump())
+            update(MovieSchema).
+            where(MovieSchema.id == movie_id).
+            values(**movie.model_dump())
         )).rowcount
         
         return bool(updated)
@@ -88,14 +90,15 @@ class MovieRepository(BaseRepository):
         
         return set(new_genres + existing)
 
-    async def get_popular(self, limit: int = 10) -> list[MovieRead]:
+    async def get_popular(self, skip: int, limit: int) -> list[MovieRead]:
         query = (
-            select(MovieSchema)
-            .outerjoin(RatingSchema)
-            .group_by(MovieSchema.id)
-            .order_by(func.avg(RatingSchema.rating).desc())
-            .options(selectinload(MovieSchema.genres))
-            .limit(limit)
+            select(MovieSchema).
+            outerjoin(RatingSchema).
+            group_by(MovieSchema.id).
+            order_by(func.avg(RatingSchema.rating).desc()).
+            options(selectinload(MovieSchema.genres)).
+            offset(skip).
+            limit(limit)
         )
         
         movies = (await self.db.execute(query)).scalars().all()

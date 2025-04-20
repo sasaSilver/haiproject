@@ -1,12 +1,16 @@
 from fastapi import APIRouter
 import numpy as np
 
+from src.api.schemas.rating import Rating
 
 from ..schemas import MovieRead
 from ..dependencies import MovieRepo, RatingRepo, UserRepo
 from src.database.models import RatingSchema
 
-recommendation_router = APIRouter(prefix="/recommendations", tags=["recommendations"])
+recommendation_router = APIRouter(
+    prefix="/recommendations",
+    tags=["recommendations"]
+)
 
 def calculate_user_similarity(user1_ratings: list[RatingSchema], user2_ratings: list[RatingSchema]) -> float:
     """Calculate similarity between two users based on their ratings"""
@@ -26,7 +30,7 @@ def calculate_user_similarity(user1_ratings: list[RatingSchema], user2_ratings: 
     
     if len(x) < 2:
         return 0.0
-        
+    
     correlation = np.corrcoef(x, y)[0, 1]
     return correlation if not np.isnan(correlation) else 0.0
 
@@ -39,7 +43,7 @@ async def get_user_recommendations(
     limit: int = 10
 ) -> list[MovieRead]:
     # Get all ratings
-    all_ratings = await rating_repo.get_all()
+    all_ratings: list[Rating] = await rating_repo.get_all()
     
     # Get current user's ratings
     user_ratings = [r for r in all_ratings if r.user_id == user_id]

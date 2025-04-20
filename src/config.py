@@ -1,10 +1,12 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from pydantic import Field
 
 class Settings(BaseSettings):
-    db_uri: str = Field(validation_alias="DB_URI")
-    echo_sql: bool = True
-    project_name: str = "Movie API"
+    db_uri: str
+    echo_sql: bool = False
+    project_name: str = "Movie Recommendations API"
+    secret: str
+    algorithm: str
+    access_token_expire_m: int
     model_config = SettingsConfigDict(
         env_file=".env"
     )

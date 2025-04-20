@@ -1,0 +1,47 @@
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, HTTPException
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+
+from ..dependencies import AuthRepo
+from ..schemas import UserCreate, UserRead, Token
+
+router = APIRouter(prefix="/auth", tags=["auth"])
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
+
+@router.post("/register")
+async def register(
+    user: UserCreate,
+    repo: AuthRepo
+) -> Token:
+    result = await repo.register(user)
+    if not result:
+        raise HTTPException(
+            400, "Username already registered"
+        )
+    return result
+
+@router.post("/login")
+async def login(
+    repo: AuthRepo,
+    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+) -> Token:
+    token = await repo.login(form_data.username, form_data.password)
+    if not token:
+        raise HTTPException(
+            401, "Incorrect username or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return token
+
+async def get_current_user(
+    repo: AuthRepo,
+    token: str = Depends(oauth2_scheme),
+) -> UserRead:
+    user = await repo.get_current_user(token)
+    if not user:
+        raise HTTPException(
+            401, "Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return user

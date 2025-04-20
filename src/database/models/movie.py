@@ -19,12 +19,13 @@ class MovieSchema(Base):
     )
     ratings: Mapped[set[RatingSchema] | None] = relationship(
         back_populates="movie",
-        cascade="all, delete"
+        cascade="all, delete",
+        lazy="selectin"
     )
     
     genres: Mapped[set[GenreSchema] | None] = relationship(
         secondary=movie_genre,
         back_populates="movies",
         cascade="all, delete",
-        lazy="select"
+        lazy="selectin"
     )

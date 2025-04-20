@@ -18,5 +18,6 @@ class GenreSchema(Base):
     
     movies: Mapped[set["MovieSchema"]] = relationship( # type: ignore
         secondary=movie_genre,
-        back_populates="genres"
+        back_populates="genres",
+        lazy="selectin"
     )

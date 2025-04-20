@@ -8,10 +8,10 @@ from src.database.models import RatingSchema
 class RatingRepository(BaseRepository):
     async def get_all(
         self,
-        user_id: int | None = None,
-        movie_id: int | None = None,
-        skip: int = 0,
-        limit: int = 100
+        user_id: int | None,
+        movie_id: int | None,
+        skip: int,
+        limit: int
     ) -> list[Rating]:
         query = select(RatingSchema)
         if user_id is not None:
