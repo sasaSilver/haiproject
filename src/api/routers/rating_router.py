@@ -26,6 +26,7 @@ async def create_rating(
         raise HTTPException(
             404, f"Rating already exists or movie with id <{rating.movie_id}> or user with id <{rating.user_id}> don't exist"
         )
+    return True
 
 @rating_router.patch("/")
 async def update_rating(
@@ -37,6 +38,7 @@ async def update_rating(
         raise HTTPException(
             404, f"No rating for movie <{rating.movie_id}> from user <{rating.user_id}>"
         )
+    return True
 
 @rating_router.delete("/")
 async def delete_rating(
@@ -49,3 +51,4 @@ async def delete_rating(
         raise HTTPException(
             404, f"No rating for movie <{movie_id}> from user <{user_id}>"
         )
+    return True

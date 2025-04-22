@@ -60,3 +60,4 @@ async def delete_user(
     status = await repo.delete(user_id)
     if status == False:
         raise HTTPException(422, f"No user with id <{user_id}>")
+    return True

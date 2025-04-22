@@ -17,12 +17,14 @@ class MovieRepository(BaseRepository):
         return MovieRead.model_validate(movie)
 
     async def get_all(
-            self,
-            _and: list[str] | None,
-            _or: list[str] | None,
-            _not: list[str] | None,
-            skip: int,
-            limit: int
+        self,
+        _and: list[str] | None,
+        _or: list[str] | None,
+        _not: list[str] | None,
+        year: int | None,
+        rating: float | None,
+        skip: int,
+        limit: int
     ) -> list[MovieRead]:
         query = select(MovieSchema).options(selectinload(MovieSchema.genres))
         if _and:
@@ -34,7 +36,10 @@ class MovieRepository(BaseRepository):
             query = query.join(MovieSchema.genres).where(GenreSchema.name.in_(_or))
         if _not:
             query = query.where(not_(MovieSchema.genres.any(GenreSchema.name.in_(_not))))
-            
+        if year:
+            query = query.where(MovieSchema.year == year)
+        if rating:
+            query = query.where(MovieSchema.rating >= rating)
         query = query.group_by(MovieSchema.id)
         movies = (await self.db.execute(
             query.offset(skip).limit(limit)
@@ -79,7 +84,7 @@ class MovieRepository(BaseRepository):
         new_genres = (await self.db.execute(
             insert(GenreSchema).
             values([{"name": n} for n in genre_names]).
-            on_conflict_do_nothing(index_elements=["name"]). # genres have unique constraint
+            on_conflict_do_nothing(index_elements=["name"]).
             returning(GenreSchema)
         )).scalars().all()
         

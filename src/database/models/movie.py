@@ -11,6 +11,8 @@ class MovieSchema(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     title: Mapped[str] = mapped_column(index=True)
     image: Mapped[str] = mapped_column()
+    rating: Mapped[float] = mapped_column()
+    description: Mapped[str] = mapped_column()
     duration: Mapped[int] = mapped_column(
         CheckConstraint("duration > 0", name="positive_duration"),
     )

@@ -7,6 +7,8 @@ class _MovieBase(Base):
     title: str
     duration: int = Field(example=1000, description="Duration in seconds")
     image: str
+    rating: float
+    description: str
     year: int = Field(example=2000)
 
 class MovieCreate(_MovieBase):
@@ -19,5 +21,7 @@ class MovieRead(_MovieBase):
 class MovieUpdate(Base):
     title: str | None = None
     duration: int | None = None
+    rating: float | None = None
+    description: str | None = None
     year: int | None = None
     genres: list[GenreUpdate] | None = None

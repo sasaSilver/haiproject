@@ -1,7 +1,7 @@
 from typing import Annotated
 
 from fastapi import APIRouter, HTTPException, Query
-from pydantic import PositiveInt
+from pydantic import PositiveFloat, PositiveInt
 from pydantic.types import StringConstraints
 
 from ..schemas import MovieCreate, MovieRead, MovieUpdate
@@ -24,10 +24,12 @@ async def get_movies(
     _and: list[Lowercase] | None = Query(None, alias="and"),
     _or: list[Lowercase] | None = Query(None, alias="or"),
     _not: list[Lowercase] | None = Query(None, alias="not"),
+    year: PositiveInt | None = Query(None),
+    rating: PositiveFloat | None = Query(None),
     skip: PositiveInt = Query(0),
     limit: PositiveInt = Query(100, le=100)
 ) -> list[MovieRead]:
-    return await repo.get_all(_and, _or, _not, skip, limit)
+    return await repo.get_all(_and, _or, _not, year, rating, skip, limit)
 
 @movie_router.get("/{movie_id}")
 async def get_movie(
@@ -48,6 +50,7 @@ async def update_movie(
     success = await repo.update(movie_id, movie)
     if success == False:
         raise HTTPException(404, f"No movie with id <{movie_id}>")
+    return True
 
 @movie_router.delete("/{movie_id}")
 async def delete_movie(
@@ -57,3 +60,4 @@ async def delete_movie(
     success = await repo.delete(movie_id)
     if success == False:
         raise HTTPException(404, f"No movie with id <{movie_id}>")
+    return True
