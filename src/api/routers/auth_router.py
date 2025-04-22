@@ -4,35 +4,35 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 
 from ..dependencies import AuthRepo
-from ..schemas import UserCreate, UserRead, Token
+from ..schemas import UserCreate, UserRead, Token, UserLogin
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 
+
 @router.post("/register")
-async def register(
-    user: UserCreate,
-    repo: AuthRepo
-) -> Token:
+async def register(user: UserCreate, repo: AuthRepo) -> Token:
     result = await repo.register(user)
     if not result:
-        raise HTTPException(
-            400, "Username already registered"
-        )
+        raise HTTPException(400, "Username already registered")
     return result
+
 
 @router.post("/login")
 async def login(
+    user: UserLogin,
     repo: AuthRepo,
-    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+    # form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
 ) -> Token:
-    token = await repo.login(form_data.username, form_data.password)
+    token = await repo.login(user.username, user.password)
     if not token:
         raise HTTPException(
-            401, "Incorrect username or password",
+            401,
+            "Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
     return token
+
 
 async def get_current_user(
     repo: AuthRepo,
@@ -41,7 +41,8 @@ async def get_current_user(
     user = await repo.get_current_user(token)
     if not user:
         raise HTTPException(
-            401, "Could not validate credentials",
+            401,
+            "Could not validate credentials",
             headers={"WWW-Authenticate": "Bearer"},
         )
     return user

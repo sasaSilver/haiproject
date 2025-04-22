@@ -11,3 +11,7 @@ class UserCreate(_UserBase):
 
 class UserUpdate(Base):
     name: str | None = None
+    
+class UserLogin(Base):
+    username : str
+    password : str
