@@ -39,15 +39,14 @@ class MovieRepository(BaseRepository):
         if year:
             query = query.where(MovieSchema.year == year)
         if rating:
-            query = query.where(MovieSchema.rating >= rating)
-        query = query.group_by(MovieSchema.id)
+            query = query.where(MovieSchema.vote_average >= rating)
+        # query = query.group_by(MovieSchema.id)
         movies = (await self.db.execute(
             query.offset(skip).limit(limit)
         )).scalars().all()
-        
         return [MovieRead.model_validate(movie) for movie in movies]
     
-    async def get(self, movie_id: int) -> MovieRead | None:
+    async def get(self, movie_id: str) -> MovieRead | None:
         movie = (await self.db.execute(
             select(MovieSchema).
             options(
@@ -58,16 +57,17 @@ class MovieRepository(BaseRepository):
         
         return MovieRead.model_validate(movie) if movie else None
 
-    async def update(self, movie_id: int, movie: MovieUpdate) -> bool:
+    async def update(self, movie_id: str, movie: MovieUpdate) -> bool:
+        update_movie = movie.model_dump(exclude_unset=True)
         updated = (await self.db.execute(
             update(MovieSchema).
             where(MovieSchema.id == movie_id).
-            values(**movie.model_dump())
+            values(**update_movie)
         )).rowcount
         
         return bool(updated)
 
-    async def delete(self, movie_id: int) -> bool:
+    async def delete(self, movie_id: str) -> bool:
         deleted = (await self.db.execute(
             delete(MovieSchema).where(MovieSchema.id == movie_id)
         )).rowcount

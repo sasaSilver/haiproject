@@ -3,7 +3,8 @@ from sqlalchemy.exc import IntegrityError
 
 from .base_repo import BaseRepository
 from ..schemas import Rating, RatingUpdate
-from src.database.models import RatingSchema
+from src.database.models import RatingSchema, UserSchema, MovieSchema
+from sqlalchemy.orm import selectinload
 
 class RatingRepository(BaseRepository):
     async def get_all(
@@ -22,8 +23,30 @@ class RatingRepository(BaseRepository):
         return [Rating.model_validate(rating) for rating in ratings]
 
     async def create(self, rating: Rating) -> bool:
-        rating = RatingSchema(**rating.model_dump())
-        self.db.add(rating)
+        rating_obj = RatingSchema(**rating.model_dump())
+        user_query = (
+            select(UserSchema).
+            options(selectinload(UserSchema.ratings)).
+            where(UserSchema.id == rating_obj.user_id)
+        )
+        movie_query = (
+            select(MovieSchema).
+            options(selectinload(MovieSchema.ratings)).
+            where(MovieSchema.id == rating_obj.movie_id)
+        )
+        user_result = await self.db.execute(user_query)
+        movie_result = await self.db.execute(movie_query)
+        user = user_result.scalar_one_or_none()
+        movie = movie_result.scalar_one_or_none()
+        if user is None or movie is None:
+            return False
+        if user.ratings is None:
+            user.ratings = set()
+        if movie.ratings is None:
+            movie.ratings = set()
+        user.ratings.add(rating_obj)
+        movie.ratings.add(rating_obj)
+        self.db.add(rating_obj)
         try:
             await self.db.commit()
         except IntegrityError:

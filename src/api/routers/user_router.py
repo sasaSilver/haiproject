@@ -1,17 +1,42 @@
 from fastapi import APIRouter, HTTPException, Depends, Query
 from pydantic import PositiveInt
 
-from ..schemas import UserCreate, UserRead, UserUpdate
-from ..dependencies import UserRepo
+from ..schemas import UserCreate, UserRead, UserUpdate, CurrentUser, Rating
+from ..dependencies import UserRepo, RatingRepo
 from .auth_router import get_current_user
 
 user_router = APIRouter(prefix="/users", tags=["users"])
 
 @user_router.get("/me")
-async def get_current_user_info(
-    current_user: UserRead = Depends(get_current_user)
-) -> UserRead:
+async def get_current_user(
+    current_user: CurrentUser = Depends(get_current_user)
+) -> CurrentUser:
     return current_user
+
+@user_router.patch("/me")
+async def update_current_user(
+    repo: UserRepo,
+    name: str,
+    current_user: CurrentUser = Depends(get_current_user)
+) -> bool:
+    return repo.update(current_user.id, UserUpdate(name=name))
+
+@user_router.post("/me/rate/")
+async def rate_movie(
+    rating_repo: RatingRepo,
+    movie_id: PositiveInt = Query(),
+    rating: float = Query(),
+    current_user: CurrentUser = Depends(get_current_user),
+) -> bool:
+    rating = Rating(
+        user_id=current_user.id,
+        movie_id=movie_id,
+        rating=rating
+    )
+    result = await rating_repo.create(rating)
+    if result == False:
+        raise HTTPException(status_code=400, detail="Rating could not be processed")
+    return True
 
 @user_router.post("/", response_model=UserRead)
 async def create_user(
@@ -26,7 +51,7 @@ async def create_user(
 @user_router.get("/", response_model=list[UserRead])
 async def get_users(
     repo: UserRepo,
-    skip: PositiveInt = 0,
+    skip: PositiveInt = Query(0),
     limit: PositiveInt = Query(100, le=100)
 ) -> list[UserRead]:
    return await repo.get_all(skip, limit)

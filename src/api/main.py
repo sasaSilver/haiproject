@@ -1,11 +1,23 @@
-from fastapi import FastAPI, Response
+import asyncio
+from contextlib import asynccontextmanager
+
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .routers import routers
 from ..config import settings
 
+from src.database.core import create_tables, create_db_utils
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await create_tables()
+    await create_db_utils()
+    yield
+
 app = FastAPI(
-    title=settings.project_name
+    title=settings.project_name,
+    lifespan=lifespan
 )
 
 origins = [
@@ -22,8 +34,8 @@ app.add_middleware(
 )
 
 @app.get("/")
-async def ping() -> str:
-    return Response(content="alive", media_type="text/plain")
+async def ping():
+    return "yo"
 
 for router in routers:
     app.include_router(router)

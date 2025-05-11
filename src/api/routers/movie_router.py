@@ -18,6 +18,16 @@ async def create_movie(
 ) -> MovieRead:
     return await repo.create(movie)
 
+@movie_router.get("/{movie_id}")
+async def get_movie(
+    repo: MovieRepo,
+    movie_id: str
+) -> MovieRead:
+    movie = await repo.get(movie_id)
+    if movie is None:
+        raise HTTPException(404, f"No movie with id <{movie_id}>")
+    return movie
+
 @movie_router.get("/")
 async def get_movies(
     repo: MovieRepo,
@@ -27,24 +37,15 @@ async def get_movies(
     year: PositiveInt | None = Query(None),
     rating: PositiveFloat | None = Query(None),
     skip: PositiveInt = Query(0),
-    limit: PositiveInt = Query(100, le=100)
+    limit: PositiveInt = Query(100)
 ) -> list[MovieRead]:
     return await repo.get_all(_and, _or, _not, year, rating, skip, limit)
 
-@movie_router.get("/{movie_id}")
-async def get_movie(
-    repo: MovieRepo,
-    movie_id: PositiveInt
-) -> MovieRead:
-    movie = await repo.get(movie_id)
-    if movie is None:
-        raise HTTPException(404, f"No movie with id <{movie_id}>")
-    return movie
 
 @movie_router.patch("/{movie_id}")
 async def update_movie(
     repo: MovieRepo,
-    movie_id: PositiveInt,
+    movie_id: str,
     movie: MovieUpdate,
 ):
     success = await repo.update(movie_id, movie)
@@ -55,7 +56,7 @@ async def update_movie(
 @movie_router.delete("/{movie_id}")
 async def delete_movie(
     repo: MovieRepo,
-    movie_id: PositiveInt
+    movie_id: str
 ):
     success = await repo.delete(movie_id)
     if success == False:

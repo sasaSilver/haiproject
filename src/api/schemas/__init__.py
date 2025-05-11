@@ -1,7 +1,7 @@
-from .movie import MovieCreate, MovieRead, MovieUpdate
-from .genre import GenreCreate, GenreRead, GenreUpdate
-from .user import UserCreate, UserRead, UserUpdate, UserLogin
-from .rating import Rating, RatingUpdate
-from .token import Token, TokenData
+from .movie import *
+from .genre import *
+from .user import *
+from .rating import *
+from .token import *
 
 Rating.model_rebuild()

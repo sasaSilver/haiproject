@@ -4,23 +4,24 @@ from .base import Base
 from .genre import GenreRead, GenreUpdate
 
 class _MovieBase(Base):
+    popularity: float
     title: str
-    duration: int = Field(example=1000, description="Duration in seconds")
-    image: str
-    rating: float
+    vote_average: float
+    vote_count: int
     description: str
-    year: int = Field(example=2000)
+    year: int
 
 class MovieCreate(_MovieBase):
     genres: list[str]
 
 class MovieRead(_MovieBase):
-    id: int
+    id: str
     genres: list[GenreRead]
 
 class MovieUpdate(Base):
     title: str | None = None
     duration: int | None = None
+    image: str | None = None
     rating: float | None = None
     description: str | None = None
     year: int | None = None
