@@ -4,17 +4,17 @@ import os
 class ModelBase:
     def __init_subclass__(cls, model_cache_path: str, **kwargs):
         super().__init_subclass__()
-        cls.model_cache_path = './trained/' + model_cache_path
+        cls.model_cache_path = 'src/ai_models/trained/' + model_cache_path
     
     @classmethod
-    def load_cache(cls):
+    async def load_cache(cls):
         if os.path.exists(cls.model_cache_path):
             return None
         with open(cls.model_cache_path, "rb") as f:
             return pickle.load(f)
 
     @classmethod
-    def dump_cache(cls, cache):
+    async def dump_cache(cls, cache):
         with open(cls.model_cache_path, "wb") as f:
             pickle.dump(cache, f)
 

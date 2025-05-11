@@ -3,7 +3,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
 from .base import ModelBase, TrainException
 
-class SearchKeywordsModel(ModelBase, model_cache="search_keywords_cache.pkl"):
+class SearchKeywordsModel(ModelBase, model_cache_path="search_keywords_cache.pkl"):
     model = None
     id_map = None
     matrix = None

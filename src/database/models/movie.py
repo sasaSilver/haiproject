@@ -1,8 +1,8 @@
 from sqlalchemy.orm import mapped_column, relationship, Mapped
-
 from .base import Base
 from .rating import RatingSchema
 from .genre import movie_genre, GenreSchema
+from .keyword import movie_keyword, KeywordSchema
 
 class MovieSchema(Base):
     __tablename__ = "movies"
@@ -14,7 +14,6 @@ class MovieSchema(Base):
     vote_count: Mapped[int] = mapped_column()
     description: Mapped[str] = mapped_column()
     year: Mapped[int] = mapped_column()
-    keywords: Mapped[list[str]] = mapped_column()
     ratings: Mapped[set[RatingSchema]] = relationship(
         back_populates="movie",
         cascade="all, delete"
@@ -22,6 +21,13 @@ class MovieSchema(Base):
     
     genres: Mapped[set[GenreSchema]] = relationship(
         secondary=movie_genre,
+        back_populates="movies",
+        cascade="all, delete",
+        lazy="selectin"
+    )
+    
+    keywords: Mapped[set[KeywordSchema]] = relationship(
+        secondary=movie_keyword,
         back_populates="movies",
         cascade="all, delete",
         lazy="selectin"

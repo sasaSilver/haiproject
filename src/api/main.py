@@ -1,4 +1,3 @@
-import asyncio
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -8,11 +7,14 @@ from .routers import routers
 from ..config import settings
 
 from src.database.core import create_tables, create_db_utils
+import src.ai_models.utils as ai_utils
+from src.ai_models import *
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await create_tables()
     await create_db_utils()
+    SearchTitleModel.train(ai_utils.get_movie_titles())
     yield
 
 app = FastAPI(

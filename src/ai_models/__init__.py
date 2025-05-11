@@ -1,0 +1,4 @@
+from .search_title import SearchTitleModel
+from .search_keywords import SearchKeywordsModel
+from .collaborative import CollaborativeFilteringModel
+from .content_filtering import ContentFilteringModel

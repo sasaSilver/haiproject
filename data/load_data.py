@@ -3,16 +3,14 @@ import os
 import pandas as pd
 from ast import literal_eval
 
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine, text, insert
 sys.path.append(os.path.abspath(os.path.join(os.getcwd(), "..")))
 from src.config import settings
+from src.database.models import (
+    GenreSchema, movie_genre,
+    KeywordSchema, movie_keyword
+)
 
-def convert_keyword(k: str) -> list[str]:
-    k: list[dict[str, str]] = literal_eval(k)
-    keywords = []
-    for k_dict in k:
-        keywords.append(k_dict["name"].replace('"', ''))
-    return keywords
 
 if __name__ == "__main__":
     engine = create_engine(settings.db_uri.replace("+asyncpg", ""))
@@ -26,10 +24,7 @@ if __name__ == "__main__":
     ])
     links = pd.read_csv("data/links_small.csv", dtype=str)
     links = links[links["tmdbId"].notnull()]
-    keywords = pd.read_csv("data/keywords.csv", converters={
-        "keywords": convert_keyword,
-        "id": lambda i: i
-    })
+    keywords = pd.read_csv("data/keywords.csv", dtype=str)
     
     md = md.drop([19730, 29503, 35587]) # ill-formatted overviews
     md = md[md["id"].isin(links["tmdbId"])] 
@@ -40,46 +35,61 @@ if __name__ == "__main__":
     md["vote_average"] = md["vote_average"].fillna(0).astype(float)
     md["popularity"] = md["popularity"].fillna(0).astype(float)
     md["genres"] = md["genres"].fillna("[]").apply(literal_eval)
+    md["keywords"] = md["keywords"].fillna("[]").apply(literal_eval)
     md["tagline"] = md["tagline"].fillna("")
     md["description"] = md["overview"] + md["tagline"]
     md["description"] = md["description"].fillna("")
     md["year"] = pd.to_datetime(md["release_date"], errors="coerce").apply(
         lambda x: int(str(x).split("-")[0]) if not pd.isna(x) else None
     )
-    genre_records = set()
-    movie_genre_records = []
+    genre_records: set[tuple[int, str]]= set()
+    movie_genre_records: set[tuple[str, int]]= set()
     
     for movie_id, genre_list in zip(md["id"], md["genres"]):
         for genre_dict in genre_list:
             genre_id = genre_dict["id"]
             genre_name = genre_dict["name"]
             genre_records.add((genre_id, genre_name))
-            movie_genre_records.append((movie_id, genre_id))
+            movie_genre_records.add((movie_id, genre_id))
+    
+    keyword_records: set[tuple[int, str]]= set()
+    movie_keyword_records: set[tuple[str, int]]= set()
+    
+    for movie_id, keyword_list in zip(md["id"], md["keywords"]):
+        for keyword_dict in keyword_list:
+            keyword_id = keyword_dict["id"]
+            keyword_name = keyword_dict["name"]
+            keyword_records.add((keyword_id, keyword_name))
+            movie_keyword_records.add((movie_id, keyword_id))
+
     
     md.drop(columns=[
-        "genres", "overview", "tagline", "release_date", "poster_path", "imdbId"
+        "genres", "keywords", "overview", "tagline",
+        "release_date", "poster_path", "imdbId"
     ]).to_sql(
         name="movies",
         con=engine,
         if_exists="replace",
         index=False
     )
-    
     with engine.begin() as conn:
         conn.execute(
-            text("""
-            INSERT INTO genres (id, name)
-            VALUES (:id, :name)
-            ON CONFLICT (id) DO UPDATE 
-            SET name = EXCLUDED.name
-            """),
-            [{"id": id, "name": name} for id, name in genre_records]
+            insert(GenreSchema).values([
+                {"id": id, "name": name} for id, name in genre_records
+            ])
         )
         conn.execute(
-            text("""
-            INSERT INTO movie_genre (movie_id, genre_id)
-            VALUES (:movie_id, :genre_id)
-            ON CONFLICT DO NOTHING
-            """),
-            [{"movie_id": mid, "genre_id": gid} for mid, gid in movie_genre_records]
+            insert(movie_genre).values([
+                {"movie_id": mid, "genre_id": gid} for mid, gid in movie_genre_records
+            ])
+        )
+        conn.execute(
+            insert(KeywordSchema).values([
+                {"id": id, "name": name} for id, name in keyword_records
+            ])
+        )
+        conn.execute(
+            insert(movie_keyword).values([
+                {"movie_id": mid, "keyword_id": kid} for mid, kid in movie_keyword_records
+            ])
         )

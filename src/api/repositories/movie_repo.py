@@ -4,7 +4,7 @@ from sqlalchemy.dialects.postgresql import insert
 
 from .base_repo import BaseRepository
 from ..schemas import MovieCreate, MovieRead, MovieUpdate
-from src.database.models import MovieSchema, GenreSchema, RatingSchema
+from src.database.models import MovieSchema, KeywordSchema, RatingSchema
 
 class MovieRepository(BaseRepository):
     async def create(self, movie: MovieCreate) -> MovieRead:
@@ -29,13 +29,13 @@ class MovieRepository(BaseRepository):
         query = select(MovieSchema).options(selectinload(MovieSchema.genres))
         if _and:
             for genre in _and:
-                genre_alias = aliased(GenreSchema)
+                genre_alias = aliased(KeywordSchema)
                 query = query.join(MovieSchema.genres.of_type(genre_alias))
                 query = query.where(genre_alias.name == genre)
         if _or:
-            query = query.join(MovieSchema.genres).where(GenreSchema.name.in_(_or))
+            query = query.join(MovieSchema.genres).where(KeywordSchema.name.in_(_or))
         if _not:
-            query = query.where(not_(MovieSchema.genres.any(GenreSchema.name.in_(_not))))
+            query = query.where(not_(MovieSchema.genres.any(KeywordSchema.name.in_(_not))))
         if year:
             query = query.where(MovieSchema.year == year)
         if rating:
@@ -48,14 +48,21 @@ class MovieRepository(BaseRepository):
     
     async def get(self, movie_id: str) -> MovieRead | None:
         movie = (await self.db.execute(
-            select(MovieSchema).
-            options(
-                selectinload(MovieSchema.genres),
-            ).
-            where(MovieSchema.id == movie_id)
+            select(MovieSchema)
+            .options(selectinload(MovieSchema.genres))
+            .where(MovieSchema.id == movie_id)
         )).scalar_one_or_none()
         
         return MovieRead.model_validate(movie) if movie else None
+    
+    async def get_by_ids(self, movie_ids: list[str]) -> list[MovieRead]:
+        movies = (await self.db.execute(
+            select(MovieSchema)
+            .options(selectinload(MovieSchema.genres))
+            .where(MovieSchema.id.in_(movie_ids))
+        )).scalars().all()
+        
+        return [MovieRead.model_validate(movie) for movie in movies]
 
     async def update(self, movie_id: str, movie: MovieUpdate) -> bool:
         update_movie = movie.model_dump(exclude_unset=True)
@@ -77,20 +84,20 @@ class MovieRepository(BaseRepository):
     async def _create_genres(
         self,
         genre_names: set[str] | None
-    ) -> set[GenreSchema]:
+    ) -> set[KeywordSchema]:
         if not genre_names:
             return set()
         
         new_genres = (await self.db.execute(
-            insert(GenreSchema).
+            insert(KeywordSchema).
             values([{"name": n} for n in genre_names]).
             on_conflict_do_nothing(index_elements=["name"]).
-            returning(GenreSchema)
+            returning(KeywordSchema)
         )).scalars().all()
         
         existing = (await self.db.execute(
-            select(GenreSchema).
-            where(GenreSchema.name.in_(genre_names))
+            select(KeywordSchema).
+            where(KeywordSchema.name.in_(genre_names))
         )).scalars().all()
         
         return set(new_genres + existing)
