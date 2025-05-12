@@ -14,7 +14,30 @@ from src.ai_models import *
 async def lifespan(app: FastAPI):
     await create_tables()
     await create_db_utils()
-    SearchTitleModel.train(ai_utils.get_movie_titles())
+    try:
+        SearchTitleModel.load()
+        print("Using cached SearchTitleModel")
+    except ai_utils.TrainException:
+        print("Training SearchTitleModel")
+        SearchTitleModel.train(await ai_utils.get_movie_titles())
+    try:
+        SearchAiModel.load()
+        print("Using cached SearchKeywordsModel")
+    except ai_utils.TrainException:
+        print("Training SearchKeywordsModel")
+        SearchAiModel.train(await ai_utils.get_movie_keywords())
+    try:
+        CollaborativeFilteringModel.load()
+        print("Using cached CollaborativeFilteringModel")
+    except ai_utils.TrainException:
+        print("Training CollaborativeFilteringModel")
+        CollaborativeFilteringModel.train(await ai_utils.get_ratings())
+    try:
+        ContentFilteringModel.load()
+        print("Using cached ContentFilteringModel")
+    except ai_utils.TrainException:
+        print("Training ContentFilteringModel")
+        ContentFilteringModel.train(await ai_utils.get_movies())
     yield
 
 app = FastAPI(
@@ -23,8 +46,7 @@ app = FastAPI(
 )
 
 origins = [
-    "http://localhost:3000",
-    # frontend url
+    "http://localhost:3000"
 ]
 
 app.add_middleware(

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import PositiveInt
 
-from ..schemas import Rating, RatingUpdate
+from ..schemas import Rating
 from ..dependencies import RatingRepo
 
 rating_router = APIRouter(prefix="/ratings", tags=["ratings"])
@@ -9,12 +9,16 @@ rating_router = APIRouter(prefix="/ratings", tags=["ratings"])
 @rating_router.get("/")
 async def get_ratings(
     repo: RatingRepo,
-    user_id: PositiveInt | None = Query(None, alias="user"),
-    movie_id: PositiveInt | None = Query(None, alias="movie"),
-    skip: PositiveInt = Query(0),
-    limit: PositiveInt = Query(100, le=100)
-) -> list[Rating]:
-    return await repo.get_all(user_id, movie_id, skip, limit)
+    user: PositiveInt = Query(),
+    movie: str = Query()
+) -> Rating:
+    rating = await repo.get(user, movie)
+    if not rating:
+        raise HTTPException(
+            404,
+            "Invalid user or movie"
+        )
+    return rating
 
 @rating_router.post("/")
 async def create_rating(
@@ -24,31 +28,34 @@ async def create_rating(
     status = await repo.create(rating)
     if status == False:
         raise HTTPException(
-            404, f"Rating already exists or movie with id <{rating.movie_id}> or user with id <{rating.user_id}> don't exist"
+            404,
+            "Invalid user or movie"
         )
     return True
 
 @rating_router.patch("/")
 async def update_rating(
     repo: RatingRepo,
-    rating: RatingUpdate
-) -> Rating:
+    rating: Rating
+) -> bool:
     status = await repo.update(rating)
     if status == False:
         raise HTTPException(
-            404, f"No rating for movie <{rating.movie_id}> from user <{rating.user_id}>"
+            404,
+            "Invalid user or movie"
         )
     return True
 
 @rating_router.delete("/")
 async def delete_rating(
     repo: RatingRepo,
-    user_id: PositiveInt | None = Query(None, alias="user"),
-    movie_id: PositiveInt | None = Query(None, alias="movie")
+    user: PositiveInt = Query(),
+    movie: str = Query()
 ):
-    status = await repo.delete(user_id, movie_id)
+    status = await repo.delete(user, movie)
     if status == False:
         raise HTTPException(
-            404, f"No rating for movie <{movie_id}> from user <{user_id}>"
+            404,
+            "Invalid user or movie"
         )
     return True

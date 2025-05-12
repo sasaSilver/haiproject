@@ -1,7 +1,8 @@
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
-from .base import ModelBase, TrainException
+from .base import ModelBase
+from .utils import TrainException
 from src.database.models import MovieSchema
 
 class ContentFilteringModel(ModelBase, model_cache_path="content_filtering_cache.pkl"):
@@ -10,15 +11,13 @@ class ContentFilteringModel(ModelBase, model_cache_path="content_filtering_cache
     matrix = None
 
     @classmethod
-    def load(cls, movies: list[MovieSchema] | None = None):
+    def load(cls):
         if cache := cls.load_cache():
             cls.model = cache["model"]
             cls.matrix = cache["matrix"]
             cls.id_map = cache["id_map"]
             return
-        if movies is None:
-            raise TrainException("No cached model and no training data provided")
-        cls.train(movies)
+        raise TrainException(f"{cls.__name__} missing cache.")
 
     @classmethod
     def train(cls, movies: list[MovieSchema]):
@@ -26,7 +25,7 @@ class ContentFilteringModel(ModelBase, model_cache_path="content_filtering_cache
         combined_features = []
         for movie in movies:
             genres = ", ".join([genre.name for genre in movie.genres]) if movie.genres else ""
-            keywords = " ".join(movie.keywords) if movie.keywords else ""
+            keywords = " ".join([kw.name for kw in movie.keywords]) if movie.keywords else ""
             feature_text = " ".join([
                 movie.title,
                 str(movie.year),
@@ -53,7 +52,7 @@ class ContentFilteringModel(ModelBase, model_cache_path="content_filtering_cache
 
     @classmethod
     def predict(cls, target_movie_id: str, top_n: int = 10) -> list[str]:
-        if not (cls.id_map and cls.model and cls.matrix):
+        if any([cls.id_map is None and cls.model is None and cls.matrix is None]):
             raise TrainException("Model not trained or loaded")
         reverse_id_map = {v: k for k, v in cls.id_map.items()}
         if target_movie_id not in reverse_id_map:

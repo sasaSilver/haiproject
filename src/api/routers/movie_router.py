@@ -1,13 +1,7 @@
-from typing import Annotated
-
-from fastapi import APIRouter, HTTPException, Query
-from pydantic import PositiveFloat, PositiveInt
-from pydantic.types import StringConstraints
+from fastapi import APIRouter, HTTPException
 
 from ..schemas import MovieCreate, MovieRead, MovieUpdate
 from ..dependencies import MovieRepo
-
-Lowercase = Annotated[str, StringConstraints(pattern=r"^[A-Za-z]+$", to_lower=True)]
 
 movie_router = APIRouter(prefix="/movies", tags=["movies"])
 
@@ -27,19 +21,6 @@ async def get_movie(
     if movie is None:
         raise HTTPException(404, f"No movie with id <{movie_id}>")
     return movie
-
-@movie_router.get("/")
-async def get_movies(
-    repo: MovieRepo,
-    _and: list[Lowercase] | None = Query(None, alias="and"),
-    _or: list[Lowercase] | None = Query(None, alias="or"),
-    _not: list[Lowercase] | None = Query(None, alias="not"),
-    year: PositiveInt | None = Query(None),
-    rating: PositiveFloat | None = Query(None),
-    skip: PositiveInt = Query(0),
-    limit: PositiveInt = Query(100)
-) -> list[MovieRead]:
-    return await repo.get_all(_and, _or, _not, year, rating, skip, limit)
 
 
 @movie_router.patch("/{movie_id}")

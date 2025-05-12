@@ -26,7 +26,7 @@ if __name__ == "__main__":
     links = links[links["tmdbId"].notnull()]
     keywords = pd.read_csv("data/keywords.csv", dtype=str)
     
-    md = md.drop([19730, 29503, 35587]) # ill-formatted overviews
+    md = md.drop([19730, 29503, 35587]).drop_duplicates()
     md = md[md["id"].isin(links["tmdbId"])] 
     md = md.merge(links[["tmdbId", "imdbId"]], left_on="id", right_on="tmdbId", how="left")
     md = md.merge(keywords[["id", "keywords"]], on="id", how="left")

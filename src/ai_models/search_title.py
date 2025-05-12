@@ -1,7 +1,8 @@
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
-from .base import ModelBase, TrainException
+from .base import ModelBase
+from .utils import TrainException
 
 class SearchTitleModel(ModelBase, model_cache_path="search_title_cache.pkl"):
     model = None
@@ -9,21 +10,22 @@ class SearchTitleModel(ModelBase, model_cache_path="search_title_cache.pkl"):
     matrix = None
     
     @classmethod
-    async def load(cls, movie_titles: list[str] | None = None):
-        if cache := await cls.load_cache():
+    def load(cls):
+        if cache := cls.load_cache():
             cls.model = cache["model"]
             cls.matrix = cache["matrix"]
             cls.id_map = cache["id_map"]
             return
-        if movie_titles is None:
-            raise TrainException("No cached model and no training data provided")
-        await cls.train(movie_titles)
+        raise TrainException(f"{cls.__name__} missing cache.")
 
     @classmethod
-    async def train(cls, movie_ids_titles: list[tuple[str, str]]):
+    def train(cls, movie_ids_titles: list[tuple[str, str]]):
         cls.id_map = {arr_id: id_title[0] for arr_id, id_title in enumerate(movie_ids_titles)}
         movie_titles = [id_title[1] for id_title in movie_ids_titles]
-        cls.model = TfidfVectorizer(stop_words='english').fit(movie_titles)
+        cls.model = TfidfVectorizer(
+            strip_accents="ascii",
+            ngram_range=(1, 2)
+        ).fit(movie_titles)
         cls.matrix = cls.model.transform(movie_titles)
         cls.dump_cache({
             "matrix": cls.matrix,
@@ -32,10 +34,10 @@ class SearchTitleModel(ModelBase, model_cache_path="search_title_cache.pkl"):
         })
 
     @classmethod
-    async def predict(cls, movie_title: str, top_n: int = 20) -> list[str]:
-        if not (cls.id_map and cls.model and cls.matrix):
+    def predict(cls, movie_title: str, top_n: int = 5) -> list[str]:
+        if any([cls.id_map is None and cls.model is None and cls.matrix is None]):
             raise TrainException("Model not trained or loaded")
         query_vec = cls.model.transform([movie_title])
-        similarity = cosine_similarity(query_vec, cls.model).flatten()
-        indices = np.argpartition(similarity, -top_n)[-top_n:][::-1]
+        similarity = cosine_similarity(query_vec, cls.matrix).flatten()
+        indices = np.argsort(similarity)[-top_n:][::-1]
         return [cls.id_map[i] for i in indices]

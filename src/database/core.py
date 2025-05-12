@@ -1,5 +1,3 @@
-import asyncio
-
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
@@ -23,9 +21,8 @@ async def create_tables():
         await conn.run_sync(Base.metadata.create_all)
 
 async def create_db_utils():
-    async with engine.begin() as conn:
-        statements = []
-        statements.append(conn.execute(text("""
+    async with async_session() as conn:
+        await conn.execute(text("""
         CREATE OR REPLACE FUNCTION get_C() RETURNS FLOAT AS $$
         DECLARE
             result FLOAT;
@@ -34,9 +31,9 @@ async def create_db_utils():
             RETURN result;
         END;
         $$ LANGUAGE plpgsql;
-        """)))
+        """))
 
-        statements.append(conn.execute(text("""
+        await conn.execute(text("""
         CREATE OR REPLACE FUNCTION get_m() RETURNS INTEGER AS $$
         DECLARE
             result INTEGER;
@@ -45,9 +42,9 @@ async def create_db_utils():
             RETURN result;
         END;
         $$ LANGUAGE plpgsql;
-        """)))
+        """))
 
-        statements.append(conn.execute(text("""
+        await conn.execute(text("""
         CREATE OR REPLACE FUNCTION get_top_movies() RETURNS SETOF movies AS $$
         DECLARE
             threshold INTEGER := get_m();
@@ -57,10 +54,10 @@ async def create_db_utils():
             WHERE vote_count >= threshold AND vote_average IS NOT NULL AND vote_count IS NOT NULL;
         END;
         $$ LANGUAGE plpgsql;
-        """)))
+        """))
 
-        statements.append(conn.execute(text("""
-        CREATE OR REPLACE FUNCTION weighted_rating(vote_count INTEGER, vote_average FLOAT) RETURNS FLOAT AS $$
+        await conn.execute(text("""
+        CREATE OR REPLACE FUNCTION weighted_rating(vote_count BIGINT, vote_average DOUBLE PRECISION) RETURNS FLOAT AS $$
         DECLARE
             v INTEGER := vote_count;
             R FLOAT := vote_average;
@@ -75,26 +72,22 @@ async def create_db_utils():
             RETURN result;
         END;
         $$ LANGUAGE plpgsql;
-        """)))
-        
-        statements.append(conn.execute(text("""
-        CREATE OR REPLACE FUNCTION get_top_movies_with_wr() RETURNS TABLE (
-            id BIGINT,
-            wr FLOAT
-        ) AS $$
+        """))
+    
+        await conn.execute(text("""
+        CREATE OR REPLACE FUNCTION get_best_movies() RETURNS SETOF movies AS $$
         DECLARE
             threshold INTEGER := get_m();
         BEGIN
             RETURN QUERY
-            SELECT id, weighted_rating(vote_count, vote_average) AS wr
-            FROM movies
+            SELECT m.*
+            FROM movies m
             WHERE vote_count >= threshold AND vote_average IS NOT NULL AND vote_count IS NOT NULL
-            ORDER BY wr DESC
+            ORDER BY weighted_rating(vote_count, vote_average) DESC
             LIMIT 20;
         END;
         $$ LANGUAGE plpgsql;
-        """)))
-        asyncio.gather(*statements)
+        """))
 
 async def get_db():
     async with async_session() as session:

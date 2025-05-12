@@ -68,6 +68,6 @@ class AuthRepository(BaseRepository):
         try:
             user = CurrentUser.model_validate(user)
         except ValidationError as e:
-            print(e.json())
+            return None
         return user
     
