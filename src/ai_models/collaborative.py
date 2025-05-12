@@ -100,3 +100,13 @@ class CollaborativeFilteringModel(ModelBase, model_cache_path="collab_filtering_
         items = cls.model.similar_items(item_idx, N=top_n)
         
         return [cls.reverse_item_map[i] for i in items if i in cls.reverse_item_map]
+    
+    @classmethod
+    def dump(cls):
+        cls.dump_cache({
+            "model": cls.model,
+            "user_map": cls.user_map,
+            "item_map": cls.item_map,
+            "user_items": cls.user_items,
+            "reverse_item_map": cls.reverse_item_map
+        })

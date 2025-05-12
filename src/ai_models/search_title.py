@@ -41,3 +41,11 @@ class SearchTitleModel(ModelBase, model_cache_path="search_title_cache.pkl"):
         similarity = cosine_similarity(query_vec, cls.matrix).flatten()
         indices = np.argsort(similarity)[-top_n:][::-1]
         return [cls.id_map[i] for i in indices]
+    
+    @classmethod
+    def dump(cls):
+        cls.dump_cache({
+            "matrix": cls.matrix,
+            "model": cls.model,
+            "id_map": cls.id_map
+        })

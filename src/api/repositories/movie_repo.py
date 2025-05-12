@@ -29,12 +29,27 @@ class MovieRepository(BaseRepository):
     
     async def get_all(
         self,
-        skip: int,
-        limit: int
+        skip: int = 0,
+        limit: int = 10,
+        _and: list[str] | None = None,
+        _or: list[str] | None = None,
+        _not: list[str] | None = None,
     ) -> list[MovieRead]:
-        query = select(MovieSchema).options(selectinload(MovieSchema.genres))
+        query = (
+            select(MovieSchema)
+            .options(selectinload(MovieSchema.genres))
+        )
+        if _and:
+            for genre in _and:
+                genre_alias = aliased(GenreSchema)
+                query = query.join(MovieSchema.genres.of_type(genre_alias))
+                query = query.where(genre_alias.name == genre)
+        if _or:
+            query = query.join(MovieSchema.genres).where(GenreSchema.name.in_(_or))
+        if _not:
+            query = query.where(not_(MovieSchema.genres.any(GenreSchema.name.in_(_not))))
         movies = (await self.db.execute(
-            query.offset(skip).limit(limit)
+            query.offset(skip).limit(limit).order_by(MovieSchema.vote_average.desc())
         )).scalars().all()
         return [MovieRead.model_validate(movie) for movie in movies]
     

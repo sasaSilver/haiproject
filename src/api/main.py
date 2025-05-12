@@ -39,6 +39,10 @@ async def lifespan(app: FastAPI):
         print("Training ContentFilteringModel")
         ContentFilteringModel.train(await ai_utils.get_movies())
     yield
+    SearchAiModel.dump()
+    SearchTitleModel.dump()
+    ContentFilteringModel.dump()
+    CollaborativeFilteringModel.dump()
 
 app = FastAPI(
     title=settings.project_name,

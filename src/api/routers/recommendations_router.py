@@ -12,13 +12,13 @@ rec_router = APIRouter(prefix="/recommend", tags=["recommendations"])
 @rec_router.get("/")
 async def get_recommendations(
     repo: MovieRepo,
-    movie_id: str | None = Query(None),
-    user_id: int | None = Query(None)
+    movie: str | None = Query(None),
+    user: int | None = Query(None)
 ) -> list[MovieRead]:
-    if movie_id:
-        movie_ids = ContentFilteringModel.predict(movie_id)
-    elif user_id:
-        movie_ids = CollaborativeFilteringModel.predict(user_id)
+    if movie:
+        movie_ids = ContentFilteringModel.predict(movie)
+    elif user:
+        movie_ids = CollaborativeFilteringModel.predict(user)
     return await repo.get_by_ids(movie_ids)
 
 @rec_router.get("/movies")

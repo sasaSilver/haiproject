@@ -61,3 +61,11 @@ class ContentFilteringModel(ModelBase, model_cache_path="content_filtering_cache
         similarity_scores = cosine_similarity(cls.matrix[target_idx:target_idx+1], cls.matrix).flatten()
         similar_indices = np.argsort(-similarity_scores)[1:top_n+1]
         return [cls.id_map[i] for i in similar_indices if similarity_scores[i] > 0]
+
+    @classmethod
+    def dump(cls):
+        cls.dump_cache({
+            "matrix": cls.matrix,
+            "model": cls.model,
+            "id_map": cls.id_map
+        })

@@ -20,6 +20,6 @@ async def search(
     limit: PositiveInt = Query(100)
 ):
     if not q:
-        return await movie_repo.get_all(skip, limit)
+        return await movie_repo.get_all(skip, limit, _and, _or, _not)
     movie_ids = SearchAiModel.predict(q.strip()) if ai else SearchTitleModel.predict(q)
     return await movie_repo.get_by_ids(movie_ids, _and, _or, _not, year, rating, skip, limit)
